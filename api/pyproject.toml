@@ -16,6 +16,9 @@ fastapi = "^0.110.1"
 uvicorn = "^0.29.0"
 pydantic = "^2.6.4"
 sqlalchemy = "^2.0.29"
+antidote = "^2.0.0"
+alembic = "^1.12.0"
+psycopg2-binary = "^2.9.3"
 
 [build-system]
 requires = ["poetry-core"]
