@@ -21,4 +21,4 @@ jobs:
     - name: Analysing the code with pylint
       run: |
         cd api
-        PYTHONPATH=src poetry run pylint --rcfile=.pylintrc $(git ls-files '*.py')
+        PYTHONPATH=src poetry run pylint --rcfile=../.pylintrc $(git ls-files '*.py')
