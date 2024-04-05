@@ -2,7 +2,7 @@
 name = "api"
 version = "0.1.0"
 description = "Bookstore API"
-authors = ["Rohit Bansal <rohit.bansal@thoughtworks.com>"]
+authors = ["Rohit Bansal"]
 readme = "README.md"
 
 packages= [
