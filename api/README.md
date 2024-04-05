@@ -35,9 +35,13 @@ poetry env info
 The application uses [Alembic](https://alembic.sqlalchemy.org/en/latest/) for database migrations. It is a 
 lightweight database migration tool for SQLAlchemy.
 
+#### SQLite
+By default, the application uses SQLite as the database. The database file `books.db` is created in the `api` directory.
+
+#### Postgres
 Start postgres locally and update the database URL in the [src/config.py](src/config.py) to point to your database.
 
-Database URL format:
+Postgres URL format:
 ```command
 postgresql://<username>:<password>@<host>:<port>/<database>
 ```
