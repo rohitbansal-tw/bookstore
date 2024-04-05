@@ -20,3 +20,7 @@ jobs:
       run: |
         cd api
         PYTHONPATH=src poetry install --with dev && poetry run pylint --rcfile=../.pylintrc $(git ls-files '*.py')
+    - name: Run pytest
+      run: |
+        cd api
+        PYTHONPATH=src poetry install --with dev && poetry run pytest 

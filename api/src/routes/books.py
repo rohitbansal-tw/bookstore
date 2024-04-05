@@ -13,6 +13,7 @@ book_service = BookService()
 def read_book():
     return book_service.get_books()
 
+
 @router.post(path="/", response_model=BookEntity)
 def create_book(book: CreateBook):
     return book_service.add_book(book)
