@@ -35,19 +35,19 @@ poetry env info
 The application uses [Alembic](https://alembic.sqlalchemy.org/en/latest/) for database migrations. It is a 
 lightweight database migration tool for SQLAlchemy.
 
-#### SQLite
+### SQLite
 By default, the application uses SQLite as the database. The database file `books.db` is created in the `api` directory.
 
-#### Postgres
-Start postgres locally and update the database URL in the [src/config.py](src/config.py) to point to your database.
+### Postgres
+If you like to use postgres. Start postgres locally and update the database URL in the [src/config.py](src/config.py) 
+to point to your database. The database URL format should be as follows:
 
-Postgres URL format:
 ```command
 postgresql://<username>:<password>@<host>:<port>/<database>
 ```
 
 ## Running the migrations
-The models are defined in the [src/models.py](src/models.py) file. These models are used to create the migrations.
+The models are defined in the [src/models.py](src/db/models.py) file. These models are used to create the migrations.
 
 To run the migrations, execute the following command:
 ```commandline
@@ -56,7 +56,7 @@ poetry run alembic upgrade head
 
 ## Update database using alembic migrations
 
-Add/Update database models in the [src/models.py](src/models.py) file. The changes will be applied to the database using
+Add/Update database models in the [src/models.py](src/db/models.py) file. The changes will be applied to the database using
 Alembic migrations.
 
 To create a new migration, run the following command:
@@ -77,4 +77,5 @@ poetry run main
 ```
 
 The application will start running on `http://localhost:8000`.
+
 Swagger documentation is available at `http://localhost:8000/docs`.
