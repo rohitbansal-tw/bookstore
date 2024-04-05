@@ -1,6 +1,9 @@
 from sqlalchemy import Column, Integer, String
+from sqlalchemy.orm import DeclarativeBase
 
-from src.db.base import Base
+
+class Base(DeclarativeBase):
+    pass
 
 
 class Book(Base):

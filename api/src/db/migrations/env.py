@@ -4,7 +4,6 @@ from alembic import context
 from sqlalchemy import engine_from_config
 from sqlalchemy import pool
 
-from src.db.base import Base
 from src.config import db_url
 
 # this is the Alembic Config object, which provides
@@ -21,7 +20,7 @@ if config.config_file_name is not None:
 # from myapp import mymodel
 
 import src.db.models as models  # noqa pylint: disable=import-error,wrong-import-position,unused-import
-target_metadata = Base.metadata
+target_metadata = models.Base.metadata
 
 
 # other values from the config, defined by the needs of env.py,

@@ -12,13 +12,11 @@ jobs:
       uses: actions/setup-python@v3
       with:
         python-version: ${{ matrix.python-version }}
-    - name: Install dependencies from 'api' folder
+    - name: Install poetry
       run: |
-        cd api
         python -m pip install --upgrade pip
         pip install poetry
-        poetry install --with dev
     - name: Analysing the code with pylint
       run: |
         cd api
-        PYTHONPATH=src poetry run pylint --rcfile=../.pylintrc $(git ls-files '*.py')
+        PYTHONPATH=src poetry install --with dev && poetry run pylint --rcfile=../.pylintrc $(git ls-files '*.py')
