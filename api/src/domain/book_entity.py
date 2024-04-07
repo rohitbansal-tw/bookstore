@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 from src.db.models import Book
 
@@ -10,6 +10,8 @@ class CreateBook(BaseModel):
 
 
 class BookEntity(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: int
     title: str
     author: str
@@ -17,4 +19,4 @@ class BookEntity(BaseModel):
 
     @staticmethod
     def from_db_model(book: Book):
-        return BookEntity(id=book.id, title=book.title, author=book.author, year=book.year)
+        return BookEntity.model_validate(book)
