@@ -16,6 +16,7 @@ class BookService:
     def get_books(self, book_repo: BookRepository = inject.me()) -> List[BookEntity]:
         books = book_repo.get_books()
         return [BookEntity.from_db_model(book) for book in books]
+        # return sorted([BookEntity.from_db_model(book) for book in books], key=lambda book: book.year)
 
     @inject
     @log
