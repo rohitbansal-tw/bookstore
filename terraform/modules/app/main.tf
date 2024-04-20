@@ -10,7 +10,7 @@ variable "aws_region" {
 
 variable "log-group-name" {
   default = "/ecs/bookstore-api"
-  type = string
+  type    = string
 }
 
 resource "aws_ecs_cluster" "bookstore_cluster" {
@@ -62,19 +62,60 @@ resource "aws_ecs_task_definition" "bookstore_task" {
   ])
 }
 
-resource "aws_service_discovery_private_dns_namespace" "bookstore_namespace" {
-  name = "bookstore.local"
-  vpc  = aws_vpc.bookstore_vpc.id
+resource "aws_security_group" "bookstore_api_sg" {
+  name        = "bookstore-ecs-security-group"
+  description = "Security group for Bookstore ECS tasks"
+  vpc_id      = aws_vpc.bookstore_vpc.id
+
+  // Allow all inbound traffic
+  ingress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  // Allow all outbound traffic
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = {
+    Name = "bookstore-ecs-security-group"
+  }
 }
 
-resource "aws_service_discovery_service" "bookstore_service_discovery" {
-  name = "bookstore-service"
-  dns_config {
-    namespace_id = aws_service_discovery_private_dns_namespace.bookstore_namespace.id
-    dns_records {
-      ttl  = 10
-      type = "A"
-    }
+resource "aws_lb" "bookstore_lb" {
+  name               = "bookstore-lb"
+  internal           = false
+  load_balancer_type = "application"
+  security_groups    = [aws_security_group.bookstore_api_sg.id]
+  subnets            = [aws_subnet.public_subnet_1.id, aws_subnet.public_subnet_2.id]
+
+  tags = {
+    Name = "bookstore-lb"
+  }
+}
+
+resource "aws_lb_target_group" "bookstore_target_group" {
+  name        = "bookstore-target-group"
+  port        = 8000
+  protocol    = "HTTP"
+  vpc_id      = aws_vpc.bookstore_vpc.id
+  target_type = "ip"
+}
+
+resource "aws_lb_listener" "bookstore_listener" {
+  load_balancer_arn = aws_lb.bookstore_lb.arn
+  port              = 8000
+  protocol          = "HTTP"
+
+  default_action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.bookstore_target_group.arn
   }
 }
 
@@ -87,7 +128,7 @@ resource "aws_ecs_service" "bookstore_api" {
 
   network_configuration {
     subnets          = [aws_subnet.private_subnet_1.id, aws_subnet.private_subnet_2.id]
-    security_groups  = [aws_security_group.bookstore_ecs_sec_group.id]
+    security_groups  = [aws_security_group.bookstore_api_sg.id]
     assign_public_ip = false
   }
 
@@ -95,10 +136,6 @@ resource "aws_ecs_service" "bookstore_api" {
     target_group_arn = aws_lb_target_group.bookstore_target_group.arn
     container_name   = "bookstore-api"
     container_port   = 8000
-  }
-
-  service_registries {
-    registry_arn = aws_service_discovery_service.bookstore_service_discovery.arn
   }
 
   depends_on = [aws_lb_target_group.bookstore_target_group]

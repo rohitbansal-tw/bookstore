@@ -1,5 +1,5 @@
 output "ecs_security_group_id" {
-  value = aws_security_group.bookstore_ecs_sec_group.id
+  value = aws_security_group.bookstore_api_sg.id
 }
 
 output "vpc_id" {

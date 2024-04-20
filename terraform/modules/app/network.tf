@@ -44,38 +44,125 @@ resource "aws_subnet" "private_subnet_2" {
   }
 }
 
-resource "aws_security_group" "bookstore_ecs_sec_group" {
-  name        = "bookstore-ecs-security-group"
-  description = "Security group for Bookstore ECS tasks"
-  vpc_id      = aws_vpc.bookstore_vpc.id
+# Launch tasks in a private subnet and make sure you have AWS PrivateLink endpoints configured
+# in your VPC, for the services you need (ECR for image pull authentication, S3 for image
+# layers, and AWS Secrets Manager for secrets).
+#
+# https://stackoverflow.com/questions/61265108/aws-ecs-fargate-resourceinitializationerror-unable-to-pull-secrets-or-registry
 
-  // Allow all inbound traffic
+resource "aws_security_group" "ecr_sg" {
+  name        = "ecr-endpoint-sg"
+  description = "Security group for ECR endpoint"
+
+  vpc_id = aws_vpc.bookstore_vpc.id
+
+  # Allow inbound traffic from ECR endpoint
   ingress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
+    from_port   = 443
+    to_port     = 443
+    protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
 
-  // Allow all outbound traffic
+  # Allow outbound traffic to ECR endpoint
   egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
+    from_port   = 443
+    to_port     = 443
+    protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  tags = {
-    Name = "bookstore-ecs-security-group"
   }
 }
 
-# Create internet gateway
+resource "aws_security_group" "secrets_manager_sg" {
+  name        = "secrets-manager-endpoint-sg"
+  description = "Security group for AWS Secrets Manager endpoint"
+
+  vpc_id = aws_vpc.bookstore_vpc.id
+
+  # Allow inbound traffic from Secrets Manager endpoint
+  ingress {
+    from_port   = 443
+    to_port     = 443
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  # Allow outbound traffic to Secrets Manager endpoint
+  egress {
+    from_port   = 443
+    to_port     = 443
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+}
+
+resource "aws_vpc_endpoint" "vpc_endpoint_ecr" {
+  vpc_id            = aws_vpc.bookstore_vpc.id
+  service_name      = "com.amazonaws.${var.aws_region}.ecr.dkr"
+  vpc_endpoint_type = "Interface"
+
+  security_group_ids = [aws_security_group.ecr_sg.id]
+  subnet_ids         = [aws_subnet.private_subnet_1.id, aws_subnet.private_subnet_2.id]
+
+  tags = {
+    Name = "bookstore-ecr-endpoint"
+  }
+}
+
+resource "aws_vpc_endpoint" "vpc_endpoint_ecr_api" {
+  vpc_id            = aws_vpc.bookstore_vpc.id
+  service_name      = "com.amazonaws.${var.aws_region}.ecr.api"
+  vpc_endpoint_type = "Interface"
+
+  security_group_ids = [aws_security_group.ecr_sg.id]
+  subnet_ids         = [aws_subnet.private_subnet_1.id, aws_subnet.private_subnet_2.id]
+
+  tags = {
+    Name = "bookstore-ecr-api-endpoint"
+  }
+}
+
+resource "aws_vpc_endpoint" "vpc_endpoint_cloudwatch" {
+  vpc_id            = aws_vpc.bookstore_vpc.id
+  service_name      = "com.amazonaws.${var.aws_region}.logs"
+  vpc_endpoint_type = "Interface"
+
+  subnet_ids = [aws_subnet.private_subnet_1.id, aws_subnet.private_subnet_2.id]
+
+  tags = {
+    Name = "bookstore-cloudwatch-endpoint"
+  }
+}
+
+resource "aws_vpc_endpoint" "vpc_endpoint_s3" {
+  vpc_id            = aws_vpc.bookstore_vpc.id
+  service_name      = "com.amazonaws.${var.aws_region}.s3"
+  vpc_endpoint_type = "Gateway"
+
+  tags = {
+    Name = "bookstore-s3-endpoint"
+  }
+}
+
+resource "aws_vpc_endpoint" "vpc_endpoint_secrets_manager" {
+  vpc_id            = aws_vpc.bookstore_vpc.id
+  service_name      = "com.amazonaws.${var.aws_region}.secretsmanager"
+  vpc_endpoint_type = "Interface"
+
+  security_group_ids = [aws_security_group.secrets_manager_sg.id]
+  subnet_ids         = [aws_subnet.private_subnet_1.id, aws_subnet.private_subnet_2.id]
+
+  tags = {
+    Name = "bookstore-secrets-manager-endpoint"
+  }
+}
+
+# Create an internet gateway for the VPC to allow internet access for public subnets
+
 resource "aws_internet_gateway" "bookstore_igw" {
   vpc_id = aws_vpc.bookstore_vpc.id
 }
 
-# Attach internet gateway to public subnet
 resource "aws_route_table" "bookstore_public_route_table" {
   vpc_id = aws_vpc.bookstore_vpc.id
 
@@ -83,7 +170,6 @@ resource "aws_route_table" "bookstore_public_route_table" {
     cidr_block = "0.0.0.0/0"
     gateway_id = aws_internet_gateway.bookstore_igw.id
   }
-
   tags = {
     Name = "bookstore-public-route-table"
   }
@@ -97,52 +183,4 @@ resource "aws_route_table_association" "public_subnet_1_association" {
 resource "aws_route_table_association" "public_subnet_2_association" {
   subnet_id      = aws_subnet.public_subnet_2.id
   route_table_id = aws_route_table.bookstore_public_route_table.id
-}
-
-# If your ECS tasks need access specifically to Amazon Elastic Container Registry (ECR)
-# without accessing the broader internet, you can use a VPC Endpoint for ECR. This allows your
-# tasks in the private subnet to pull Docker images from ECR without needing a NAT Gateway or
-# NAT instance.
-resource "aws_vpc_endpoint" "bookstore_vpc_ecr_endpoint" {
-  vpc_id            = aws_vpc.bookstore_vpc.id
-  service_name      = "com.amazonaws.${var.aws_region}.ecr.dkr"
-  vpc_endpoint_type = "Interface"
-
-  security_group_ids = [aws_security_group.bookstore_ecs_sec_group.id]
-  subnet_ids         = [aws_subnet.public_subnet_1.id, aws_subnet.public_subnet_2.id]
-
-  tags = {
-    Name = "bookstore-vpc-ecr-endpoint"
-  }
-}
-
-resource "aws_lb" "bookstore_lb" {
-  name               = "bookstore-lb"
-  internal           = false
-  load_balancer_type = "application"
-  security_groups    = [aws_security_group.bookstore_ecs_sec_group.id]
-  subnets            = [aws_subnet.public_subnet_1.id, aws_subnet.public_subnet_2.id]
-
-  tags = {
-    Name = "bookstore-lb"
-  }
-}
-
-resource "aws_lb_target_group" "bookstore_target_group" {
-  name        = "bookstore-target-group"
-  port        = 8000
-  protocol    = "HTTP"
-  vpc_id      = aws_vpc.bookstore_vpc.id
-  target_type = "ip"
-}
-
-resource "aws_lb_listener" "bookstore_listener" {
-  load_balancer_arn = aws_lb.bookstore_lb.arn
-  port              = 8000
-  protocol          = "HTTP"
-
-  default_action {
-    type             = "forward"
-    target_group_arn = aws_lb_target_group.bookstore_target_group.arn
-  }
 }

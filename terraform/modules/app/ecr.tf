@@ -5,9 +5,7 @@ resource "aws_ecr_repository" "bookstore_api" {
     encryption_type = "AES256"
   }
 
-  lifecycle {
-    prevent_destroy = true
-  }
+  force_delete = true
 }
 
 resource "aws_iam_role" "ecr_role" {
