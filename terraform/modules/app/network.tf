@@ -50,78 +50,78 @@ resource "aws_subnet" "private_subnet_2" {
 #
 # https://stackoverflow.com/questions/61265108/aws-ecs-fargate-resourceinitializationerror-unable-to-pull-secrets-or-registry
 
-resource "aws_security_group" "ecr_sg" {
-  name        = "ecr-endpoint-sg"
-  description = "Security group for ECR endpoint"
-
-  vpc_id = aws_vpc.bookstore_vpc.id
-
-  # Allow inbound traffic from ECR endpoint
-  ingress {
-    from_port   = 443
-    to_port     = 443
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  # Allow outbound traffic to ECR endpoint
-  egress {
-    from_port   = 443
-    to_port     = 443
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-}
-
-resource "aws_security_group" "secrets_manager_sg" {
-  name        = "secrets-manager-endpoint-sg"
-  description = "Security group for AWS Secrets Manager endpoint"
-
-  vpc_id = aws_vpc.bookstore_vpc.id
-
-  # Allow inbound traffic from Secrets Manager endpoint
-  ingress {
-    from_port   = 443
-    to_port     = 443
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  # Allow outbound traffic to Secrets Manager endpoint
-  egress {
-    from_port   = 443
-    to_port     = 443
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-}
-
-resource "aws_vpc_endpoint" "vpc_endpoint_ecr" {
-  vpc_id            = aws_vpc.bookstore_vpc.id
-  service_name      = "com.amazonaws.${var.aws_region}.ecr.dkr"
-  vpc_endpoint_type = "Interface"
-
-  security_group_ids = [aws_security_group.ecr_sg.id]
-  subnet_ids         = [aws_subnet.private_subnet_1.id, aws_subnet.private_subnet_2.id]
-
-  tags = {
-    Name = "bookstore-ecr-endpoint"
-  }
-}
-
-resource "aws_vpc_endpoint" "vpc_endpoint_ecr_api" {
-  vpc_id            = aws_vpc.bookstore_vpc.id
-  service_name      = "com.amazonaws.${var.aws_region}.ecr.api"
-  vpc_endpoint_type = "Interface"
-
-  security_group_ids = [aws_security_group.ecr_sg.id]
-  subnet_ids         = [aws_subnet.private_subnet_1.id, aws_subnet.private_subnet_2.id]
-
-  tags = {
-    Name = "bookstore-ecr-api-endpoint"
-  }
-}
-
+# resource "aws_security_group" "ecr_sg" {
+#   name        = "ecr-endpoint-sg"
+#   description = "Security group for ECR endpoint"
+#
+#   vpc_id = aws_vpc.bookstore_vpc.id
+#
+#   # Allow inbound traffic from ECR endpoint
+#   ingress {
+#     from_port   = 443
+#     to_port     = 443
+#     protocol    = "tcp"
+#     cidr_blocks = ["0.0.0.0/0"]
+#   }
+#
+#   # Allow outbound traffic to ECR endpoint
+#   egress {
+#     from_port   = 443
+#     to_port     = 443
+#     protocol    = "tcp"
+#     cidr_blocks = ["0.0.0.0/0"]
+#   }
+# }
+#
+# resource "aws_security_group" "secrets_manager_sg" {
+#   name        = "secrets-manager-endpoint-sg"
+#   description = "Security group for AWS Secrets Manager endpoint"
+#
+#   vpc_id = aws_vpc.bookstore_vpc.id
+#
+#   # Allow inbound traffic from Secrets Manager endpoint
+#   ingress {
+#     from_port   = 443
+#     to_port     = 443
+#     protocol    = "tcp"
+#     cidr_blocks = ["0.0.0.0/0"]
+#   }
+#
+#   # Allow outbound traffic to Secrets Manager endpoint
+#   egress {
+#     from_port   = 443
+#     to_port     = 443
+#     protocol    = "tcp"
+#     cidr_blocks = ["0.0.0.0/0"]
+#   }
+# }
+#
+# resource "aws_vpc_endpoint" "vpc_endpoint_ecr" {
+#   vpc_id            = aws_vpc.bookstore_vpc.id
+#   service_name      = "com.amazonaws.${var.aws_region}.ecr.dkr"
+#   vpc_endpoint_type = "Interface"
+#
+#   security_group_ids = [aws_security_group.ecr_sg.id]
+#   subnet_ids         = [aws_subnet.private_subnet_1.id, aws_subnet.private_subnet_2.id]
+#
+#   tags = {
+#     Name = "bookstore-ecr-endpoint"
+#   }
+# }
+#
+# resource "aws_vpc_endpoint" "vpc_endpoint_ecr_api" {
+#   vpc_id            = aws_vpc.bookstore_vpc.id
+#   service_name      = "com.amazonaws.${var.aws_region}.ecr.api"
+#   vpc_endpoint_type = "Interface"
+#
+#   security_group_ids = [aws_security_group.ecr_sg.id]
+#   subnet_ids         = [aws_subnet.private_subnet_1.id, aws_subnet.private_subnet_2.id]
+#
+#   tags = {
+#     Name = "bookstore-ecr-api-endpoint"
+#   }
+# }
+#
 resource "aws_vpc_endpoint" "vpc_endpoint_cloudwatch" {
   vpc_id            = aws_vpc.bookstore_vpc.id
   service_name      = "com.amazonaws.${var.aws_region}.logs"
@@ -133,29 +133,93 @@ resource "aws_vpc_endpoint" "vpc_endpoint_cloudwatch" {
     Name = "bookstore-cloudwatch-endpoint"
   }
 }
+#
+# resource "aws_vpc_endpoint" "vpc_endpoint_s3" {
+#   vpc_id            = aws_vpc.bookstore_vpc.id
+#   service_name      = "com.amazonaws.${var.aws_region}.s3"
+#   vpc_endpoint_type = "Gateway"
+#
+#   tags = {
+#     Name = "bookstore-s3-endpoint"
+#   }
+# }
+#
+# resource "aws_vpc_endpoint" "vpc_endpoint_secrets_manager" {
+#   vpc_id            = aws_vpc.bookstore_vpc.id
+#   service_name      = "com.amazonaws.${var.aws_region}.secretsmanager"
+#   vpc_endpoint_type = "Interface"
+#
+#   security_group_ids = [aws_security_group.secrets_manager_sg.id]
+#   subnet_ids         = [aws_subnet.private_subnet_1.id, aws_subnet.private_subnet_2.id]
+#
+#   tags = {
+#     Name = "bookstore-secrets-manager-endpoint"
+#   }
+# }
 
-resource "aws_vpc_endpoint" "vpc_endpoint_s3" {
-  vpc_id            = aws_vpc.bookstore_vpc.id
-  service_name      = "com.amazonaws.${var.aws_region}.s3"
-  vpc_endpoint_type = "Gateway"
-
+# Allocate an Elastic IP (EIP) for the NAT Gateway
+resource "aws_eip" "nat_eip_1" {
+  domain = "vpc"
   tags = {
-    Name = "bookstore-s3-endpoint"
+    Name = "bookstore-nat-eip-1"
   }
 }
 
-resource "aws_vpc_endpoint" "vpc_endpoint_secrets_manager" {
-  vpc_id            = aws_vpc.bookstore_vpc.id
-  service_name      = "com.amazonaws.${var.aws_region}.secretsmanager"
-  vpc_endpoint_type = "Interface"
+# resource "aws_eip" "nat_eip_2" {
+#   domain = "vpc"
+#   tags = {
+#     Name = "bookstore-nat-eip-2"
+#   }
+# }
 
-  security_group_ids = [aws_security_group.secrets_manager_sg.id]
-  subnet_ids         = [aws_subnet.private_subnet_1.id, aws_subnet.private_subnet_2.id]
+# Create the NAT Gateway in the public subnet
+resource "aws_nat_gateway" "nat_gateway_1" {
+  allocation_id = aws_eip.nat_eip_1.id
+  subnet_id     = aws_subnet.public_subnet_1.id
+}
 
+# resource "aws_nat_gateway" "nat_gateway_2" {
+#   allocation_id = aws_eip.nat_eip_2.id
+#   subnet_id     = aws_subnet.public_subnet_2.id
+# }
+
+resource "aws_route_table" "private_route_table" {
+  vpc_id = aws_vpc.bookstore_vpc.id
   tags = {
-    Name = "bookstore-secrets-manager-endpoint"
+    Name = "bookstore-private-route-table"
   }
 }
+
+# resource "aws_route_table" "private_route_table_2" {
+#   vpc_id = aws_vpc.bookstore_vpc.id
+#   tags = {
+#     Name = "bookstore-private-route-table-2"
+#   }
+# }
+
+resource "aws_route_table_association" "private_subnet_1_association" {
+  subnet_id      = aws_subnet.private_subnet_1.id
+  route_table_id = aws_route_table.private_route_table.id
+}
+
+resource "aws_route_table_association" "private_subnet_2_association" {
+  subnet_id      = aws_subnet.private_subnet_2.id
+  route_table_id = aws_route_table.private_route_table.id
+  # route_table_id = aws_route_table.private_route_table_2.id
+}
+
+# Update the route table of your private subnet(s) to route outbound traffic to the NAT Gateway
+resource "aws_route" "nat_gateway_route_1" {
+  route_table_id         = aws_route_table.private_route_table.id
+  destination_cidr_block = "0.0.0.0/0"
+  nat_gateway_id         = aws_nat_gateway.nat_gateway_1.id
+}
+
+# resource "aws_route" "nat_gateway_route_2" {
+#   route_table_id         = aws_route_table.private_route_table_2.id
+#   destination_cidr_block = "0.0.0.0/0"
+#   nat_gateway_id         = aws_nat_gateway.nat_gateway_2.id
+# }
 
 # Create an internet gateway for the VPC to allow internet access for public subnets
 
@@ -182,5 +246,10 @@ resource "aws_route_table_association" "public_subnet_1_association" {
 
 resource "aws_route_table_association" "public_subnet_2_association" {
   subnet_id      = aws_subnet.public_subnet_2.id
+  route_table_id = aws_route_table.bookstore_public_route_table.id
+}
+
+resource "aws_main_route_table_association" "main_route_table_association" {
+  vpc_id         = aws_vpc.bookstore_vpc.id
   route_table_id = aws_route_table.bookstore_public_route_table.id
 }

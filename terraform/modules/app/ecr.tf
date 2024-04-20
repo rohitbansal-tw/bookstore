@@ -55,16 +55,16 @@ resource "null_resource" "build_and_push_image" {
       cd ../api
 
       # Build the Docker image
-      # docker build -t bookstore .
+      docker build -t bookstore .
 
       # Tag the Docker image with ECR repository URI
-      # docker tag bookstore:latest ${aws_ecr_repository.bookstore_api.repository_url}:latest
+      docker tag bookstore:latest ${aws_ecr_repository.bookstore_api.repository_url}:latest
 
       # Authenticate Docker with ECR
-      # aws ecr get-login-password --region ${var.aws_region} | docker login --username AWS --password-stdin ${aws_ecr_repository.bookstore_api.repository_url}:latest
+      aws ecr get-login-password --region ${var.aws_region} | docker login --username AWS --password-stdin ${aws_ecr_repository.bookstore_api.repository_url}:latest
 
       # Push the Docker image to ECR
-      # docker push ${aws_ecr_repository.bookstore_api.repository_url}:latest
+      docker push ${aws_ecr_repository.bookstore_api.repository_url}:latest
     EOF
   }
 }

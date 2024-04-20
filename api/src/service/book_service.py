@@ -20,7 +20,9 @@ class BookService:
 
     @inject
     @log
-    def add_book(self, book: CreateBook, book_repo: BookRepository = inject.me()) -> BookEntity:
+    def add_book(
+        self, book: CreateBook, book_repo: BookRepository = inject.me()
+    ) -> BookEntity:
         book = Book(**book.dict())
         book = book_repo.add_book(book)
         return BookEntity.from_db_model(book)

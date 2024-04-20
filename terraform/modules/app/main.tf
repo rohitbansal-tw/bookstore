@@ -13,17 +13,17 @@ variable "log-group-name" {
   type    = string
 }
 
-resource "aws_ecs_cluster" "bookstore_cluster" {
+resource "aws_ecs_cluster" "ecs_cluster" {
   name = "bookstore-cluster"
   tags = var.tags
 }
 
-resource "aws_cloudwatch_log_group" "bookstore_log_group" {
+resource "aws_cloudwatch_log_group" "log_group" {
   name              = "/ecs/bookstore-api"
   retention_in_days = 7
 }
 
-resource "aws_ecs_task_definition" "bookstore_task" {
+resource "aws_ecs_task_definition" "task_def" {
   family                   = "bookstore-task"
   execution_role_arn       = aws_iam_role.bookstore_ecs_execution_role.arn
   task_role_arn            = aws_iam_role.bookstore_ecs_task_role.arn
@@ -55,6 +55,7 @@ resource "aws_ecs_task_definition" "bookstore_task" {
         options = {
           "awslogs-group"         = var.log-group-name
           "awslogs-region"        = var.aws_region
+          "awslogs-create-group"  = "true"
           "awslogs-stream-prefix" = "bookstore"
         }
       }
@@ -62,16 +63,16 @@ resource "aws_ecs_task_definition" "bookstore_task" {
   ])
 }
 
-resource "aws_security_group" "bookstore_api_sg" {
+resource "aws_security_group" "api_security_group" {
   name        = "bookstore-ecs-security-group"
   description = "Security group for Bookstore ECS tasks"
   vpc_id      = aws_vpc.bookstore_vpc.id
 
   // Allow all inbound traffic
   ingress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
+    from_port   = 8000
+    to_port     = 8000
+    protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
 
@@ -88,11 +89,11 @@ resource "aws_security_group" "bookstore_api_sg" {
   }
 }
 
-resource "aws_lb" "bookstore_lb" {
+resource "aws_lb" "load_balancer" {
   name               = "bookstore-lb"
   internal           = false
   load_balancer_type = "application"
-  security_groups    = [aws_security_group.bookstore_api_sg.id]
+  security_groups    = [aws_security_group.api_security_group.id]
   subnets            = [aws_subnet.public_subnet_1.id, aws_subnet.public_subnet_2.id]
 
   tags = {
@@ -100,43 +101,51 @@ resource "aws_lb" "bookstore_lb" {
   }
 }
 
-resource "aws_lb_target_group" "bookstore_target_group" {
+resource "aws_lb_target_group" "alb_target_group" {
   name        = "bookstore-target-group"
   port        = 8000
   protocol    = "HTTP"
   vpc_id      = aws_vpc.bookstore_vpc.id
   target_type = "ip"
+
+  health_check {
+    path     = "/docs"
+    port     = "8000"
+    protocol = "HTTP"
+    interval = 30
+    timeout  = 5
+  }
 }
 
-resource "aws_lb_listener" "bookstore_listener" {
-  load_balancer_arn = aws_lb.bookstore_lb.arn
+resource "aws_lb_listener" "alb_listener" {
+  load_balancer_arn = aws_lb.load_balancer.arn
   port              = 8000
   protocol          = "HTTP"
 
   default_action {
     type             = "forward"
-    target_group_arn = aws_lb_target_group.bookstore_target_group.arn
+    target_group_arn = aws_lb_target_group.alb_target_group.arn
   }
 }
 
-resource "aws_ecs_service" "bookstore_api" {
+resource "aws_ecs_service" "ecs_api" {
   name            = "bookstore-api"
-  cluster         = aws_ecs_cluster.bookstore_cluster.id
-  task_definition = aws_ecs_task_definition.bookstore_task.arn
+  cluster         = aws_ecs_cluster.ecs_cluster.id
+  task_definition = aws_ecs_task_definition.task_def.arn
   desired_count   = 1
   launch_type     = "FARGATE"
 
   network_configuration {
     subnets          = [aws_subnet.private_subnet_1.id, aws_subnet.private_subnet_2.id]
-    security_groups  = [aws_security_group.bookstore_api_sg.id]
+    security_groups  = [aws_security_group.api_security_group.id]
     assign_public_ip = false
   }
 
   load_balancer {
-    target_group_arn = aws_lb_target_group.bookstore_target_group.arn
+    target_group_arn = aws_lb_target_group.alb_target_group.arn
     container_name   = "bookstore-api"
     container_port   = 8000
   }
 
-  depends_on = [aws_lb_target_group.bookstore_target_group]
+  depends_on = [aws_lb_target_group.alb_target_group]
 }

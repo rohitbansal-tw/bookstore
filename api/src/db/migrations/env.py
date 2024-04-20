@@ -20,6 +20,7 @@ if config.config_file_name is not None:
 # from myapp import mymodel
 
 import src.db.models as models  # noqa pylint: disable=import-error,wrong-import-position,unused-import
+
 target_metadata = models.Base.metadata
 
 
@@ -69,9 +70,7 @@ def run_migrations_online() -> None:
     )
 
     with connectable.connect() as connection:
-        context.configure(
-            connection=connection, target_metadata=target_metadata
-        )
+        context.configure(connection=connection, target_metadata=target_metadata)
 
         with context.begin_transaction():
             context.run_migrations()

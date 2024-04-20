@@ -17,21 +17,20 @@ class TestBooks(BaseTestCase):
             assert world[BookRepository] == self.mock_book_repo
 
             self.mock_book_repo.add_book.return_value = mock.Mock(
-                id=1, title='Book title', author='Book author', year=2021
+                id=1, title="Book title", author="Book author", year=2021
             )
-            response = self.client.post('/books', json={
-                'title': 'Book title',
-                'author': 'Book author',
-                'year': 2021
-            })
+            response = self.client.post(
+                "/books",
+                json={"title": "Book title", "author": "Book author", "year": 2021},
+            )
 
         assert self.mock_book_repo.add_book.call_count == 1
         assert response.status_code == 200
         assert response.json() == {
-            'id': 1,
-            'title': 'Book title',
-            'author': 'Book author',
-            'year': 2021
+            "id": 1,
+            "title": "Book title",
+            "author": "Book author",
+            "year": 2021,
         }
 
     def test_get_books(self):
@@ -40,21 +39,18 @@ class TestBooks(BaseTestCase):
             assert world[BookRepository] == self.mock_book_repo
 
             self.mock_book_repo.get_books.return_value = [
-                mock.Mock(id=1, title='Book title 1', author='Book author 1', year=2021),
-                mock.Mock(id=2, title='Book title 2', author='Book author 2', year=2022)
+                mock.Mock(
+                    id=1, title="Book title 1", author="Book author 1", year=2021
+                ),
+                mock.Mock(
+                    id=2, title="Book title 2", author="Book author 2", year=2022
+                ),
             ]
-            response = self.client.get('/books')
+            response = self.client.get("/books")
 
         assert self.mock_book_repo.get_books.call_count == 1
         assert response.status_code == 200
-        assert response.json() == [{
-            'id': 1,
-            'title': 'Book title 1',
-            'author': 'Book author 1',
-            'year': 2021
-        }, {
-            'id': 2,
-            'title': 'Book title 2',
-            'author': 'Book author 2',
-            'year': 2022
-        }]
+        assert response.json() == [
+            {"id": 1, "title": "Book title 1", "author": "Book author 1", "year": 2021},
+            {"id": 2, "title": "Book title 2", "author": "Book author 2", "year": 2022},
+        ]
